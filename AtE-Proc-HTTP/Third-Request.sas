@@ -1,0 +1,20 @@
+proc http url = 'httpbin.org/helloworld';
+run;
+
+* Return Code Handling;
+data _null_;
+	if &sys_prochttp_status_code. < 400 then do;
+		putlog "NOTE: The request was succesfull, it returned with &sys_prochttp_status_code.: &sys_prochttp_status_phrase..";
+	end;
+	else if &sys_prochttp_status_code. > 500 then do;
+		putlog 'ERROR: The request was unsuccsfull, because of a server error';
+		putlog "ERROR: The request returned with &sys_prochttp_status_code.: &sys_prochttp_status_phrase..";
+	end;
+	else if &sys_prochttp_status_code. > 400 then do;
+		putlog 'ERROR: The request was unsuccsfull, because of an error in the request';
+		putlog "ERROR: The request returned with &sys_prochttp_status_code.: &sys_prochttp_status_phrase..";
+	end;
+	else do;
+		putlog "ERROR: Unkown Response - &sys_prochttp_status_code.: &sys_prochttp_status_phrase..";
+	end;
+run;
