@@ -104,11 +104,12 @@ libname outResp clear;
 %macro registerStep(pathToStep);
 	filename step "&pathToStep.";
 	
+	* Please note this is an undocumented SAS Viya API-endpoint so might be subject to change!;
 	proc http
-	    url = "&viyahost./dataFlows/steps?parentFolderUri=&targetFolderContentURI.%nrstr(&overwrite)=&replaceSteps."
-	    in = step
-	    oauth_bearer = sas_services;
-	    headers 'Accept'= 'application/vnd.sas.data.flow.step+json';
+		url = "&viyahost./dataFlows/steps?parentFolderUri=&targetFolderContentURI.%nrstr(&overwrite)=&replaceSteps."
+		in = step
+		oauth_bearer = sas_services;
+		headers 'Accept'= 'application/vnd.sas.data.flow.step+json';
 		headers 'content-type' = 'application/json';
 	quit;
 	
