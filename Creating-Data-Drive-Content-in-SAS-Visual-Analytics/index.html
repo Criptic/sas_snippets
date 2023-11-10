@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bar Chart</title>
+    <style>
+      #graph {
+        width: 700px;
+        height: 500px;
+      }
+
+      text {
+        font-size: 12px;
+        font-family: 'Ubuntu';
+      }
+
+      .toolTip {
+        position: absolute;
+        display: none;
+        min-width: 80px;
+        height: auto;
+        background: none repeat scroll 0 0 #ffffff;
+        border: 1px solid #6f257f;
+        padding: 5px;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.min.js"></script>
+    <div id="graph"></div>
+    <script>
+      if (window.addEventListener) {
+        // For standards-compliant web browsers
+        window.addEventListener('message', onMessage, false);
+      } else {
+        window.attachEvent('onmessage', onMessage);
+      }
+
+      function sendMessage(message) {
+        var url =
+          window.location != window.parent.location
+            ? document.referrer
+            : document.location.href;
+        window.parent.postMessage(message, url);
+      }
+
+      // Send instructional message
+      function sendNoDataMessage(resultName) {
+        let textMessage =
+          'This Application requires two variables as input. The first is the value for the x-axis (any type) and second value for the y-axis (numeric).';
+        document.getElementById('graph').innerText = textMessage;
+
+        var message = {
+          resultName: resultName,
+          message: textMessage,
+        };
+        sendMessage(message);
+      }
+
+      // Retrieve data and begin processing
+      function onMessage(event) {
+        if (event && event.data && event.data.columns.length === 2) {
+          // Bring the data into the correct format
+          let xLabel = event.data.columns[0].label;
+          let yLabel = event.data.columns[1].label;
+
+          let barData = event.data.data.map((row) => {
+            return { [xLabel]: row[0], [yLabel]: row[1] };
+          });
+
+          // Clean up the previous graph
+          document.getElementById('graph').innerHTML = '';
+          // Create a new bar chart
+          createBarChart(barData, xLabel, yLabel);
+        } else {
+          sendNoDataMessage('Please specify input');
+        }
+      }
+
+      /**
+       * createBarChart, function to create a d3.js bar chart with negative values and tooltips
+       * @param {Array} barData - an Array of JavaScript objects, with two elements, the first for the x-axis, second for the y-axis
+       * @param {String} xLabel - Name of the X Axis value in the Object
+       * @param {String} yLabel - Name of the Y Axis value in the Object
+       **/
+      function createBarChart(barData, xLabel, yLabel) {
+        const container = d3.select('#graph');
+        const divWidth = parseInt(container.style('width'));
+        const divHeight = parseInt(container.style('height'));
+
+        // Consider this width and Height are dynamic for div "graphID" because I am trying to responsive design
+        const margin = {
+          top: 50,
+          right: 50,
+          bottom: 50,
+          left: 50,
+        };
+        const width = divWidth - margin.left - margin.right;
+        const height = divHeight - margin.top - margin.bottom;
+
+        //To add svg in the visualization node i.e Dome node
+        const svg = container
+          .append('svg')
+          .attr('width', divWidth)
+          .attr('height', divHeight)
+          .append('g')
+          .attr('transform', `translate(${margin.left},${margin.top})`);
+
+        //To add tooltip for bar
+        const tooltip = d3
+          .select('body')
+          .append('div')
+          .attr('class', 'toolTip');
+
+        const defs = svg.append('defs');
+
+        const marker = defs
+          .append('marker')
+          .attr('id', 'arrowhead')
+          .attr('markerWidth', '10')
+          .attr('markerHeight', '7')
+          .attr('refX', '0')
+          .attr('refY', '3.5')
+          .attr('orient', 'auto');
+
+        const polygon = marker
+          .append('polygon')
+          .attr('fill', 'gray')
+          .attr('points', '0 0, 10 3.5, 0 7');
+
+        const xScale = d3
+          .scaleBand()
+          .domain(barData.map((d) => d[xLabel]))
+          .range([0, width + margin.right]);
+
+        const xAxis = d3.axisBottom(xScale);
+
+        //Adding g attribute to svg for x axis
+        const yAxisMax =
+          barData.reduce((max, item) => Math.max(max, item[yLabel]), 0) * 1.5;
+
+        const yAxisMin =
+          barData.reduce((min, item) => Math.min(min, item[yLabel]), 0) * 1.5;
+
+        const yAxisRange = Math.max(yAxisMax, Math.abs(yAxisMin));
+
+        const yScale = d3
+          .scaleLinear()
+          .domain([-yAxisRange, yAxisRange])
+          .range([height, 0]);
+
+        const yAxis = d3.axisLeft(yScale).ticks(4);
+
+        svg.append('g').call(yAxis);
+
+        const bars = svg
+          .selectAll('g.bar')
+          .data(barData)
+          .enter()
+          .append('g')
+          .classed('bar', true)
+          .attr(
+            'transform',
+            (d) => `translate(${xScale(d[xLabel]) + xScale.bandwidth() / 2}, 0)`
+          );
+
+        bars
+          .append('rect')
+          .attr('x', -20)
+          .attr('width', 40)
+          .attr('y', (d) => Math.min(yScale(d[yLabel]), height / 2))
+          .attr('height', (d) =>
+            d[yLabel] > 0
+              ? height / 2 - yScale(d[yLabel])
+              : yScale(d[yLabel]) - height / 2
+          )
+          .attr('fill', 'blue')
+          .on('mousemove', onMouseOver)
+          .on('mouseout', onMouseOut);
+
+        function onMouseOver(d, i) {
+          tooltip
+            .style('left', d3.event.pageX - 50 + 'px')
+            .style('top', d3.event.pageY - 70 + 'px')
+            .style('display', 'inline-block')
+            .html(
+              `${xLabel}: ` + d[xLabel] + '<br>' + `${yLabel}: ` + d[yLabel]
+            );
+          d3.select(this).attr('fill', '#eec42d');
+        }
+
+        function onMouseOut(d, i) {
+          tooltip.style('display', 'none');
+          d3.select(this).attr('fill', 'blue');
+        }
+
+        bars
+          .append('text')
+          .text((d) => d[yLabel])
+          .attr('text-anchor', 'middle')
+          .attr('alignment-baseline', (d) =>
+            d[yLabel] > 0 ? 'baseline' : 'hanging'
+          )
+          .attr('y', (d) => yScale(d[yLabel]))
+          .attr('dy', (d) => (d[yLabel] > 0 ? -5 : 5));
+
+        bars
+          .filter((d, i) => i < barData.length - 1)
+          .append('path')
+          .attr(
+            'd',
+            (d, i) =>
+              `M 5,${Math.min(yScale(d[yLabel]) - 20, height / 2)} V ${
+                Math.min(yScale(d[yLabel]), yScale(barData[i + 1][yLabel])) - 60
+              } H ${xScale.bandwidth() - 5} V ${Math.min(
+                yScale(barData[i + 1][yLabel]) - 25,
+                height / 2 - 10
+              )}`
+          )
+          .style('stroke', 'gray')
+          .style('fill', 'none')
+          .attr('marker-end', 'url(#arrowhead)');
+
+        bars
+          .filter((d, i) => i < barData.length - 1)
+          .append('rect')
+          .attr('x', 15)
+          .attr(
+            'y',
+            (d, i) =>
+              Math.min(yScale(d[yLabel]), yScale(barData[i + 1][yLabel])) - 70
+          )
+          .attr('width', xScale.bandwidth() - 30)
+          .attr('height', 20)
+          .attr('rx', 10)
+          .style('fill', 'white')
+          .style('stroke', 'gray');
+
+        bars
+          .filter((d, i) => i < barData.length - 1)
+          .append('text')
+          .text(
+            (d, i) =>
+              `${barData[i + 1][yLabel] > d[yLabel] ? '+' : ''}${Math.round(
+                (barData[i + 1][yLabel] / d[yLabel]) * 100 - 100
+              )}%`
+          )
+          .attr('x', xScale.bandwidth() / 2)
+          .attr(
+            'y',
+            (d, i) =>
+              Math.min(yScale(d[yLabel]), yScale(barData[i + 1][yLabel])) - 56
+          )
+          .attr('text-anchor', 'middle')
+          .style('fill', 'black');
+
+        const xAxisG = svg
+          .append('g')
+          .attr('transform', `translate(0,${height / 2})`)
+          .call(xAxis);
+
+        xAxisG.selectAll('.tick').each(function () {
+          const tick = d3.select(this);
+          const text = tick.select('text').text();
+          const data = barData.find((d) => d[xLabel] == text);
+          if (data[yLabel] < 0) {
+            tick.select('text').style('fill', 'white');
+            tick.select('line').style('stroke', 'white');
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

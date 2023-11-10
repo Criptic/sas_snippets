@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bar Chart</title>
+    <style>
+      #graph {
+        width: 700px;
+        height: 500px;
+      }
+
+      text {
+        font-size: 12px;
+        font-family: 'Ubuntu';
+      }
+
+      .toolTip {
+        position: absolute;
+        display: none;
+        min-width: 80px;
+        height: auto;
+        background: none repeat scroll 0 0 #ffffff;
+        border: 1px solid #6f257f;
+        padding: 5px;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.min.js"></script>
+    <div id="graph"></div>
+    <script>
+      const barData = [
+        {
+          Time: '2019',
+          Value: 5388,
+        },
+        {
+          Time: '2020',
+          Value: 6453,
+        },
+        {
+          Time: '2021',
+          Value: -4345,
+        },
+        {
+          Time: '2022',
+          Value: 7345,
+        },
+        {
+          Time: '2023',
+          Value: 8345,
+        },
+        {
+          Time: '2024',
+          Value: 5345,
+        },
+        {
+          Time: '2025',
+          Value: 6345,
+        },
+        {
+          Time: '2026',
+          Value: 3345,
+        },
+      ];
+
+      const container = d3.select('#graph');
+      const divWidth = parseInt(container.style('width'));
+      const divHeight = parseInt(container.style('height'));
+
+      // Consider this width and Height are dynamic for div "graphID" because I am trying to responsive design
+      const margin = {
+        top: 50,
+        right: 50,
+        bottom: 50,
+        left: 50,
+      };
+      const width = divWidth - margin.left - margin.right;
+      const height = divHeight - margin.top - margin.bottom;
+
+      //To add svg in the visualization node i.e Dome node
+      const svg = container
+        .append('svg')
+        .attr('width', divWidth)
+        .attr('height', divHeight)
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+      //To add tooltip for bar
+      const tooltip = d3.select('body').append('div').attr('class', 'toolTip');
+
+      const defs = svg.append('defs');
+
+      const marker = defs
+        .append('marker')
+        .attr('id', 'arrowhead')
+        .attr('markerWidth', '10')
+        .attr('markerHeight', '7')
+        .attr('refX', '0')
+        .attr('refY', '3.5')
+        .attr('orient', 'auto');
+
+      const polygon = marker
+        .append('polygon')
+        .attr('fill', 'gray')
+        .attr('points', '0 0, 10 3.5, 0 7');
+
+      const xScale = d3
+        .scaleBand()
+        .domain(barData.map((d) => d.Time))
+        .range([0, width + margin.right]);
+
+      const xAxis = d3.axisBottom(xScale);
+
+      //Adding g attribute to svg for x axis
+      const yAxisMax =
+        barData.reduce((max, item) => Math.max(max, item.Value), 0) * 1.5;
+
+      const yAxisMin =
+        barData.reduce((min, item) => Math.min(min, item.Value), 0) * 1.5;
+
+      const yAxisRange = Math.max(yAxisMax, Math.abs(yAxisMin));
+
+      const yScale = d3
+        .scaleLinear()
+        .domain([-yAxisRange, yAxisRange])
+        .range([height, 0]);
+
+      const yAxis = d3.axisLeft(yScale).ticks(4);
+
+      svg.append('g').call(yAxis);
+
+      const bars = svg
+        .selectAll('g.bar')
+        .data(barData)
+        .enter()
+        .append('g')
+        .classed('bar', true)
+        .attr(
+          'transform',
+          (d) => `translate(${xScale(d.Time) + xScale.bandwidth() / 2}, 0)`
+        );
+
+      bars
+        .append('rect')
+        .attr('x', -20)
+        .attr('width', 40)
+        .attr('y', (d) => Math.min(yScale(d.Value), height / 2))
+        .attr('height', (d) =>
+          d.Value > 0
+            ? height / 2 - yScale(d.Value)
+            : yScale(d.Value) - height / 2
+        )
+        .attr('fill', 'blue')
+        .on('mousemove', onMouseOver)
+        .on('mouseout', onMouseOut);
+
+      function onMouseOver(d, i) {
+        tooltip
+          .style('left', d3.event.pageX - 50 + 'px')
+          .style('top', d3.event.pageY - 70 + 'px')
+          .style('display', 'inline-block')
+          .html('Year: ' + d.Time + '<br>' + 'Value: ' + d.Value);
+        d3.select(this).attr('fill', '#eec42d');
+      }
+
+      function onMouseOut(d, i) {
+        tooltip.style('display', 'none');
+        d3.select(this).attr('fill', 'blue');
+      }
+
+      bars
+        .append('text')
+        .text((d) => d.Value)
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', (d) =>
+          d.Value > 0 ? 'baseline' : 'hanging'
+        )
+        .attr('y', (d) => yScale(d.Value))
+        .attr('dy', (d) => (d.Value > 0 ? -5 : 5));
+
+      bars
+        .filter((d, i) => i < barData.length - 1)
+        .append('path')
+        .attr(
+          'd',
+          (d, i) =>
+            `M 5,${Math.min(yScale(d.Value) - 20, height / 2)} V ${
+              Math.min(yScale(d.Value), yScale(barData[i + 1].Value)) - 60
+            } H ${xScale.bandwidth() - 5} V ${Math.min(
+              yScale(barData[i + 1].Value) - 25,
+              height / 2 - 10
+            )}`
+        )
+        .style('stroke', 'gray')
+        .style('fill', 'none')
+        .attr('marker-end', 'url(#arrowhead)');
+
+      bars
+        .filter((d, i) => i < barData.length - 1)
+        .append('rect')
+        .attr('x', 15)
+        .attr(
+          'y',
+          (d, i) => Math.min(yScale(d.Value), yScale(barData[i + 1].Value)) - 70
+        )
+        .attr('width', xScale.bandwidth() - 30)
+        .attr('height', 20)
+        .attr('rx', 10)
+        .style('fill', 'white')
+        .style('stroke', 'gray');
+
+      bars
+        .filter((d, i) => i < barData.length - 1)
+        .append('text')
+        .text(
+          (d, i) =>
+            `${barData[i + 1].Value > d.Value ? '+' : ''}${Math.round(
+              (barData[i + 1].Value / d.Value) * 100 - 100
+            )}%`
+        )
+        .attr('x', xScale.bandwidth() / 2)
+        .attr(
+          'y',
+          (d, i) => Math.min(yScale(d.Value), yScale(barData[i + 1].Value)) - 56
+        )
+        .attr('text-anchor', 'middle')
+        .style('fill', 'black');
+
+      const xAxisG = svg
+        .append('g')
+        .attr('transform', `translate(0,${height / 2})`)
+        .call(xAxis);
+
+      xAxisG.selectAll('.tick').each(function () {
+        const tick = d3.select(this);
+        const text = tick.select('text').text();
+        const data = barData.find((d) => d.Time === text);
+        if (data.Value < 0) {
+          tick.select('text').style('fill', 'white');
+          tick.select('line').style('stroke', 'white');
+        }
+      });
+    </script>
+  </body>
+</html>
