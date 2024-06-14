@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: row;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+        }
+        .info-section {
+            width: 20%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .trailer-section {
+            width: 80%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .info-section h1 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: red;" id="ERROR"></h1>
+        <div class="info-section">
+            <h1 id="title"></h1>
+            <p><strong>Release Year:</strong> <span id="release-year"></span></p>
+            <p><strong>Runtime:</strong> <span id="runtime"></span></p>
+            <p><strong>Genre:</strong> <span id="genre"></span></p>
+            <p><strong>Plot Summary:</strong> <span id="plot-summary"></span></p>
+        </div>
+        <div class="trailer-section">
+            <iframe id="trailer" width="100%" height="800px" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+    <script>
+        if (window.addEventListener) {
+            // For standards-compliant web browsers
+            window.addEventListener('message', onMessage, false);
+        } else {
+            window.attachEvent('onmessage', onMessage);
+        }
+
+        function sendMessage(message) {
+            var url =
+                window.location != window.parent.location
+                    ? document.referrer
+                    : document.location.href;
+            window.parent.postMessage(message, url);
+        }
+
+        // Send instructional message
+        function sendNoDataMessage(resultName) {
+            let textMessage =
+            'This Application requires six variables as input. Please add them in the following order: Title, Plot, Release Year, Runtime, Genre and Trailer-URL';
+            document.getElementById('ERROR').innerText = textMessage;
+
+            var message = {
+            resultName: resultName,
+            message: textMessage,
+            };
+            sendMessage(message);
+        }
+
+        // Add the movie information
+        function fillMovieInfo(movie) {
+            const titleElement = document.getElementById('title');
+            const releaseYearElement = document.getElementById('release-year');
+            const runtimeElement = document.getElementById('runtime');
+            const genreElement = document.getElementById('genre');
+            const plotSummaryElement = document.getElementById('plot-summary');
+            const trailerElement = document.getElementById('trailer');
+
+            if (titleElement) titleElement.textContent = movie.title;
+            if (releaseYearElement) releaseYearElement.textContent = movie.releaseYear.toString();
+            if (runtimeElement) runtimeElement.textContent = movie.runtime;
+            if (genreElement) genreElement.textContent = movie.genre;
+            if (plotSummaryElement) plotSummaryElement.textContent = movie.plotSummary;
+            if (trailerElement) trailerElement.src = movie.trailerUrl;
+        }
+
+        // Retrieve data and begin processing
+        function onMessage(event) {
+            if (event && event.data && event.data.columns.length === 6) {
+                // Bring the data into the correct format
+                const exampleMovie = {
+                    title: event.data.data[0][0],
+                    releaseYear: event.data.data[0][2],
+                    runtime: event.data.data[0][3],
+                    genre: event.data.data[0][4],
+                    plotSummary: event.data.data[0][1],
+                    trailerUrl: event.data.data[0][5]
+                };
+
+                // Clean up the previous graph
+                document.getElementById('ERROR').innerHTML = '';
+                // Fill the movie information
+                fillMovieInfo(exampleMovie);
+            } else {
+                sendNoDataMessage('Please specify the required inputs');
+            }
+        }
+    </script>
+</body>
+</html>
