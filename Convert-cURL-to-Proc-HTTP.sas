@@ -1,6 +1,6 @@
 /***
 	Created by David Weik
-	Please check out the accompanying blog post https://www.davidweik.org/blogfrom-curl-to-proc-http
+	Please check out the accompanying blog post https://www.davidweik.org/blog/from-curl-to-proc-http
 */
 
 * cURLString contains the full curl command;
