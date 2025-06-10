@@ -9,7 +9,7 @@
 
 * Add SAS authentication;
 * Set to 1 if you want to make a call to Viya from the same Viya Host;
-%let sasAuthentication = 1;
+%let sasAuthentication = 0;
 
 * Output Options;
 * 0 = ignore, 1 = print to log, 2 = save to table, 3 = create json lib;
@@ -330,8 +330,8 @@ run;
 
 title;
 ods html5 close;
-/*
+
 * Remove datasets;
 proc datasets library=work nolist;
     delete _curlString _procHTTPCodeStart _procHTTPOpt _procHTTPOptEnd _procHTTPStmnt _procHTTPCodeEnd _errorOutput _allCode _outputOption;
-run;*/
+run;
