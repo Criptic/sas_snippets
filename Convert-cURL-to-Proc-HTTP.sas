@@ -116,6 +116,7 @@ data work._procHTTPCodeStart;
         outputCode = '* Get the Viya Host URL;';
         output;
         outputCode = '%let viyaHost=%sysfunc(getoption(SERVICESBASEURL));';
+        output;
     end;
     outputCode = '* Create a temporary file;';
     output;
