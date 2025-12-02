@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<Snippet schemaVersion="1.0">
+
+	<Registration>
+		<Abbreviation>plc</Abbreviation>
+		<Description>Creates the link for a project with a specific compute context and workspace opened up.</Description>
+		<Procedures></Procedures>
+		<Language>SAS</Language>
+		<Version></Version>
+	</Registration>
+
+	<CodeTemplate><![CDATA[* Change the compute context to your target compute context;
+%let computeContext = SAS Job Execution compute context;
+* Change the workspace path to your target one;
+%let workspacePath = sascontent:/Public/.workspace;
+
+%let viyaHost = %sysfunc(getoption(SERVICESBASEURL));
+%put &viyaHost/SASStudio?sas-studio-servername=&computeContext.%nrstr(&)sas-studio-workspace=&workspacePath.;]]></CodeTemplate>
+
+</Snippet>

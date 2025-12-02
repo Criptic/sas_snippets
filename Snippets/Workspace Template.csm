@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<Snippet schemaVersion="1.0">
+
+	<Registration>
+		<Abbreviation>wst</Abbreviation>
+		<Description>Provides a default template for creating a workspace file in SAS Studio.</Description>
+		<Procedures></Procedures>
+		<Language>SAS</Language>
+		<Version></Version>
+	</Registration>
+
+	<CodeTemplate><![CDATA[{
+    "openfiles": [
+        {"path": "sasserver:"},
+        {"path": "sascontent:"}
+    ]
+}]]></CodeTemplate>
+
+</Snippet>
